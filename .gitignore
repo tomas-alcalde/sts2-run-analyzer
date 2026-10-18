@@ -1,0 +1,6 @@
+data/*
+!data/.gitkeep
+!data/sample.run
+.vscode/
+__pycache__/
+.venv/
