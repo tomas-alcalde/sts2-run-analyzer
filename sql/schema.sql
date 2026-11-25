@@ -8,8 +8,7 @@
 
 CREATE TABLE IF NOT EXISTS runs (
   id TEXT PRIMARY KEY ON CONFLICT IGNORE,  -- self.id, unique identifier.
-  collection TEXT,
-  charac TEXT NOT NULL, -- ensures it cannot be assigned *empty* value 
+  charac TEXT NOT NULL, -- ensures it cannot be assigned *empty* value
   ascension INTEGER, 
   win INTEGER, 
   killed_encounter TEXT, 
@@ -23,7 +22,22 @@ CREATE TABLE IF NOT EXISTS runs (
   start_time INTEGER 
 );
 
--- Create table with the deck of each run. Each row 
+-- Which folders each run is in, one row per run and folder. A run in two
+-- folders counts in both, while its data is stored once in the other tables.
+CREATE TABLE IF NOT EXISTS run_folders (
+  run_id TEXT NOT NULL,
+  collection TEXT NOT NULL,
+  PRIMARY KEY (run_id, collection),
+  FOREIGN KEY (run_id) REFERENCES runs(id)
+);
+
+-- Number of runs in each folder.
+CREATE VIEW IF NOT EXISTS folder_counts AS
+SELECT collection, COUNT(*) AS runs
+FROM run_folders
+GROUP BY collection;
+
+-- Create table with the deck of each run. Each row
 -- corresponds to a card, where first column is always the run id 
 -- (so after one deck completed it changes), the second column is the card
 -- name, and so on.
@@ -72,9 +86,12 @@ CREATE TABLE IF NOT EXISTS runs_ancient_relics(
 
 -- Each row is a floor of a run, runs are concataneted. Columns are 
 -- the run id, the node clicked on, and what was in that node.
+-- "tier" is the act position (1, 2, 3), derived the same way as in
+-- runs_card_choices below.
 CREATE TABLE IF NOT EXISTS runs_nodes(
   run_id TEXT NOT NULL,
   floor INTEGER, 
+  tier INTEGER,
   node TEXT,
   seen TEXT,
   turns_taken INTEGER, 

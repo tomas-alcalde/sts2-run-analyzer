@@ -1,18 +1,27 @@
+from pathlib import Path
 from ingest import ingest_directory
-from export import export_directory
+from print_tables import print_tables
+from queries import outdated_tables
 import subprocess
 import sys
 
-# TODO: Deck size is removed from the dashboard for now. sql/queries/deck_size.sql
-# ignores the ascension filter, so add ASC_PLACEHOLDER to it before showing it again.
 
-path = "data/old_saves"
+# TODOs are in TODO.md
 
-characs = ["ironclad", "silent", "regent", "necrobinder", "defect"]
+# Folders of .run files to ingest, e.g. add "data/my_runs". A run in several of them counts in each
+paths = ["data/sample"]
+db_path = "data/runs.db"
+
+characs = ["ironclad", "silent", "regent", "necrobinder", "defect", "fool"]
 asc = range(11)
 
-ingest_directory(path, schema_path="sql/schema.sql", db_path="data/runs.db")   # Default asc is "10"
-for charac in characs:
-    export_directory(path, charac, asc)
+if Path(db_path).exists() and outdated_tables(db_path):
+    sys.exit(f"{db_path} was built with an older sql/schema.sql. Delete it and run this script again.")
 
-subprocess.run([sys.executable, "-m", "streamlit", "run", "src/export.py"])
+for path in paths:
+    if not ingest_directory(path, schema_path="sql/schema.sql", db_path=db_path):   # Default asc is "10"
+        continue
+    for charac in characs:
+        print_tables(path, charac, asc, db_path)
+
+subprocess.run([sys.executable, "-m", "streamlit", "run", "src/app.py"])

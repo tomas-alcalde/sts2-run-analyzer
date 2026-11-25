@@ -15,14 +15,18 @@ def ingest_file(filepath, schema_path="sql/schema.sql", db_path="data/runs.db"):
 
     run = Run(filepath)
 
-    # Skip if already ingested into runs.db_path
-    exists = con.execute("SELECT 1 FROM runs WHERE id = ?", (run.id,)).fetchone()
-    if exists:
+    # Skip if multilpayer run
+    if run.player_num != 1:
         con.close()
         return
 
-    # Skip if multilpayer run
-    if run.player_num != 1:
+    # Record the folder even if the run is already stored: it counts in every folder it is in
+    con.execute("INSERT OR IGNORE INTO run_folders (run_id, collection) VALUES (?, ?)", (run.id, run.collection))
+    con.commit()
+
+    # Skip if already ingested into runs.db_path
+    exists = con.execute("SELECT 1 FROM runs WHERE id = ?", (run.id,)).fetchone()
+    if exists:
         con.close()
         return
 
@@ -54,9 +58,15 @@ def ingest_file(filepath, schema_path="sql/schema.sql", db_path="data/runs.db"):
 
 
 def ingest_directory(path, schema_path="sql/schema.sql", db_path="data/runs.db"):
+    """Ingest every Run in `path`. A missing folder (e.g. one of your own folders
+    on a fresh clone) is skipped with a warning, and returns False."""
     directory = Path(path)
+    if not directory.is_dir():
+        print(f"Skipping {path}: folder not found.")
+        return False
     for filepath in sorted(directory.iterdir()):
         ingest_file(filepath, schema_path, db_path)
+    return True
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 data/*
 !data/.gitkeep
-!data/sample.run
+!data/sample/
 .vscode/
 __pycache__/
 .venv/

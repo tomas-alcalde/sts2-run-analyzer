@@ -158,7 +158,7 @@ class Run:
             print(self._raw)
 
             print("--- Raw file as JSON ---")
-            print(json.dumps(run._raw, indent=2))
+            print(json.dumps(self._raw, indent=2))
 
     # -----------
     # Helpers
@@ -177,7 +177,6 @@ class Run:
         df = pd.DataFrame(
             {
                 "id": [self.id],
-                "collection": [self.collection],
                 "charac": [self.character],
                 "ascension": [self.ascension],
                 "win": [self.win],
@@ -215,12 +214,17 @@ class Run:
         return df
 
     def to_log_df(self) -> pd.DataFrame:
-        """One row per floor, indexed by absolute floor number"""
+        """One row per floor, indexed by absolute floor number.
+
+        FLOOR-RANGE FIX: "tier" is stamped via `_tier_of_floor`, as in
+        `to_card_choices_df`, so queries never guess the act from the floor.
+        """
         rows = []
         for f in self._floors:
             rows.append(
                 {
                     "floor": f["floor"],
+                    "tier": self._tier_of_floor(f["floor"]),
                     "node": f["node"],
                     "seen": f["seen"],
                     "turns_taken": f["turns_taken"],
@@ -420,6 +424,6 @@ class Run:
 if __name__ == "__main__":
     import sys
 
-    filepath = #ADD 
+    filepath = sys.argv[1]
     run = Run(filepath, show=False)
     print(run)
